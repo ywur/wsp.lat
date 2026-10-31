@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Purity Bridge Panel</title>
+    <style>
+        body { background: #0c0c14; color: #b48cff; font-family: monospace; padding: 20px; }
+        input, textarea, button { background: #1c1c28; color: #e6e6f5; border: 1px solid #5a5a78; padding: 10px; display: block; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
+        button { background: #3c2850; cursor: pointer; font-weight: bold; }
+        button:hover { background: #5a3c78; }
+        .log { background: #111; padding: 10px; border: 1px solid #333; height: 200px; overflow-y: scroll; color: #8cf0b4; }
+        #status { color: #78dcff; }
+    </style>
+</head>
+<body>
+    <h2>Purity Bridge (wsp.lat)</h2>
+    <div id="status">Checking connection...</div>
+    <br>
+    <label>Target Username (or 'ALL'):</label>
+    <input type="text" id="target" value="ALL">
+    
+    <label>Luau Script:</label>
+    <textarea id="src" rows="10">print("Hello from wsp.lat!")</textarea>
+    
+    <button onclick="pushScript()">Execute</button>
+    <h3>Execution Log</h3>
+    <div class="log" id="log"></div>
+
+    <script>
+        const URL = "https://wsp.lat/bridge.php";
+        const TOKEN = "super_secret_token_change_me";
+
+        async function fetchClients() {
+            try {
+                const res = await fetch(`${URL}?action=clients&token=${TOKEN}`);
+                const clients = await res.json();
+                document.getElementById("status").innerText = `Connected Clients: ${clients.length ? clients.join(', ') : 'None'}`;
+            } catch(e) {
+                document.getElementById("status").innerText = "Error connecting to server.";
+            }
+        }
+
+        async function pushScript() {
+            const target = document.getElementById("target").value;
+            const src = document.getElementById("src").value;
+            const btn = document.querySelector("button");
+            btn.innerText = "Queueing...";
+
+            try {
+                await fetch(`${URL}?action=push&token=${TOKEN}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ target: target, src: src })
+                });
+                btn.innerText = "Queued!";
+                setTimeout(() => btn.innerText = "Execute", 1500);
+            } catch(e) {
+                btn.innerText = "Error";
+            }
+        }
+
+        // Refresh client list every 3s
+        setInterval(fetchClients, 3000);
+        fetchClients();
+    </script>
+</body>
+</html>
